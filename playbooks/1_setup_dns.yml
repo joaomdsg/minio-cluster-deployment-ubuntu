@@ -1,0 +1,18 @@
+---
+- name: Ensure MinIO Cluster DNS Config
+  hosts: all
+  become: yes
+  gather_facts: yes
+  tasks:
+    - name: Fail if the remote system is not Ubuntu
+      fail:
+        msg: "This playbook only works on Ubuntu systems"
+      when: ansible_distribution != 'Ubuntu'
+    
+    - name: minio servers are in hosts file
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ item }}"
+        state: present
+      with_lines: cat templates/cluster_dns
+       

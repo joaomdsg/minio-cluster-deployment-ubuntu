@@ -1,0 +1,48 @@
+---
+- name: Format and setup disks for minio
+  hosts: all
+  become: true
+  vars:
+    # comma separated disk names, can be passed in with -e option when running the playboook. 
+    # example: -e "DISKS=sdb,sdc"
+    DISKS: ""
+  tasks:
+    - name: Fail if OS is not Ubuntu
+      fail:
+        msg: "This playbook only works on Ubuntu"
+      when: ansible_distribution != 'Ubuntu'
+      
+    - name: Ensure disks are setup with xfs
+      filesystem:
+        fstype: xfs
+        dev: "/dev/{{ item }}"
+        state: present
+      loop: "{{ DISKS | split(',') }}"
+      loop_control:
+        index_var: index
+    
+    - name: Get disk labels
+      command: blkid -o value -s LABEL
+      changed_when: false
+      register: disk_labels
+
+    - name: Ensure disks are setup with static labels
+      command: "xfs_admin -L DISK{{ index }} /dev/{{ item }}"
+      loop: "{{ DISKS | split(',') }}"
+      loop_control:
+        index_var: index
+      when: '"DISK" not in disk_labels.stdout'
+
+    - name: Ensure disks are mapped in /etc/fstab
+      lineinfile:
+        path: /etc/fstab
+        line: "LABEL=DISK{{ index }} /mnt/disk{{ index }} xfs defaults,noatime 0 2"
+      loop: "{{ DISKS | split(',') }}"
+      loop_control:
+        index_var: index
+      notify: Reboot required
+
+  handlers:
+    - name: Reboot required
+      reboot:
+        reboot_timeout: 300

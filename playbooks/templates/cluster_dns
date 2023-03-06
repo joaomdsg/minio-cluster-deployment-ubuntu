@@ -1,0 +1,3 @@
+# MinIO DNS Config
+192.168.50.101 minio1.example.com
+192.168.50.102 minio2.example.com

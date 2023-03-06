@@ -1,0 +1,14 @@
+---
+- name: Show disks
+  hosts: all
+  tasks:
+    - name: Fail if OS is not Ubuntu
+      fail:
+        msg: "This playbook only works on Ubuntu"
+      when: ansible_distribution != "Ubuntu"
+    - name: List Disks
+      shell: "lsblk"
+      register: disks_output
+    - name: Print Disks
+      debug:
+        var: disks_output.stdout_lines

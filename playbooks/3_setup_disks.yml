@@ -11,7 +11,7 @@
       fail:
         msg: "This playbook only works on Ubuntu"
       when: ansible_distribution != 'Ubuntu'
-      
+
     - name: Ensure disks are setup with xfs
       filesystem:
         fstype: xfs
@@ -20,6 +20,7 @@
       loop: "{{ DISKS | split(',') }}"
       loop_control:
         index_var: index
+        
     
     - name: Get disk labels
       command: blkid -o value -s LABEL
@@ -27,20 +28,44 @@
       register: disk_labels
 
     - name: Ensure disks are setup with static labels
-      command: "xfs_admin -L DISK{{ index }} /dev/{{ item }}"
+      command: "xfs_admin -L DISK{{ index + 1 }} /dev/{{ item }}"
       loop: "{{ DISKS | split(',') }}"
       loop_control:
         index_var: index
+        
       when: '"DISK" not in disk_labels.stdout'
 
     - name: Ensure disks are mapped in /etc/fstab
       lineinfile:
         path: /etc/fstab
-        line: "LABEL=DISK{{ index }} /mnt/disk{{ index }} xfs defaults,noatime 0 2"
+        line: "LABEL=DISK{{ index + 1 }} /mnt/disk{{ index + 1 }} xfs defaults,noatime 0 2"
       loop: "{{ DISKS | split(',') }}"
       loop_control:
         index_var: index
+        
       notify: Reboot required
+    
+    - name: Ensure minio-user group
+      group:
+        name: minio-user
+        state: present
+
+    - name: Ensure minio-user user
+      user:
+        name: minio-user
+        group: minio-user
+        state: present
+
+    - name: Ensure disks accessible by minio-user
+      file:
+        path: /mnt/disk{{ index + 1 }}
+        state: directory
+        owner: minio-user
+        group: minio-user
+      loop: "{{ DISKS | split(',') }}"
+      loop_control:
+        index_var: index
+        
 
   handlers:
     - name: Reboot required

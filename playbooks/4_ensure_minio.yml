@@ -1,0 +1,39 @@
+- name: Ensure minio package is installed
+  hosts: all
+  become: yes
+
+  vars:
+    MOUNT_POINTS: ""
+
+  tasks:
+
+    - name: Fail if the remote system is not Ubuntu
+      fail:
+        msg: "This playbook only works on Ubuntu systems"
+      when: ansible_distribution != 'Ubuntu'
+      
+    - name: Download minio package
+      get_url:
+        url: "https://dl.min.io/server/minio/release/linux-amd64/archive/minio_20230222182345.0.0_amd64.deb"
+        dest: "/tmp/minio.deb"
+
+    - name: Check if minio package is installed
+      command: dpkg -l minio
+      register: minio_status
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Install minio package
+      command: dpkg -i /tmp/minio.deb
+      when: "'no packages found' in minio_status.stdout"
+
+    - name: Ensure minio config file
+      copy:
+        src: templates/minio_conf
+        dest: /etc/default/minio
+
+    - name: Ensure Minio service is running
+      systemd:
+        name: minio
+        enabled: yes
+        state: restarted

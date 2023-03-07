@@ -41,4 +41,8 @@ Steps to deploy the Minio object storage cluster:
    ```
 
 4. Ensure Minio is installd and configured:
-   
+    ```bash
+   ansible-playbook playbooks/4_ensure_minio.yml \
+        -i inventory/minio1 \
+        -i inventory/minio2
+   ```

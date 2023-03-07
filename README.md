@@ -19,6 +19,7 @@ vagrant destroy -f
 ## Deployment
 Steps to deploy the Minio object storage cluster:
 1. Ensure DNS config:
+   
    Chage the `playbooks/templates/cluster_dns` template to your desired DNS names, then run the playbook:
    ```bash
    ansible-playbook playbooks/1_setup_dns.yml \
@@ -41,6 +42,7 @@ Steps to deploy the Minio object storage cluster:
    ```
 
 4. Ensure Minio is installd and configured:
+    
     Chage the `playbooks/templates/minio_conf` template to your desired configuration, then run the playbook:
     ```bash
    ansible-playbook playbooks/4_ensure_minio.yml \
